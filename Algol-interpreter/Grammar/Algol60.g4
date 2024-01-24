@@ -12,33 +12,35 @@ Vysvětlivky:
     'program' => název lexikálního pravidla: reprezentace pravidel
 */
 
+/* LEXIKÁLNÍ PRAVIDLA */
+
+// obecná pravidla
 program: statement* EOF;
-
 statement: variable_declaration | function_definition | expression_statement | if_statement | while_statement;
-
 variable_declaration: data_type IDENTIFIER (ASSIGN expression)? ';';
-
-data_type: 'INTEGER' | 'REAL' | 'STRING';
-
-function_definition: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block;
-
-parameter_list: variable_declaration (',' variable_declaration)*;
-
 expression_statement: expression ';';
+expression: additive_expression;
+// za primární výraz je možno dosazovat identifier - např. název proměnné, number - nějaké číslo, string, či výraz v závorkách (x+5...)  
+primary_expression: IDENTIFIER | NUMBER | STRING | '(' expression ')';  
+block: '{' statement* '}';
 
+// cykly a podmínky 
 if_statement: 'IF' expression block ('ELSE' block)?;
-
 while_statement: 'WHILE' expression block;
 
-expression: additive_expression;
+// lokální a globální typované proměnné
+// TODO dodělat scope lokalnich a globalnich
+data_type: 'INTEGER' | 'REAL' | 'STRING';
 
+// funkce s parametry
+function_definition: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block;
+parameter_list: variable_declaration (',' variable_declaration)*;
+
+// aritmetické výrazy
 additive_expression: multiplicative_expression (ADDITIVE_OPPERANDS multiplicative_expression)*; 
-
 multiplicative_expression: primary_expression (MULTIPLICATIVE_OPPERANDS primary_expression)*; 
 
-primary_expression: IDENTIFIER | NUMBER | STRING | '(' expression ')';
-
-block: '{' statement* '}';
+/* TERMINÁLY (klíčová slova) */
 
 // ignorování whitespaců a zástupných znaků pro tabulátor (\t) a zakončení řádku (\r\n)
 WS: [ \t\r\n]+ -> skip;
