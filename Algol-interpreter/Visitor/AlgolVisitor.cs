@@ -1,6 +1,6 @@
 using Algol_interpreter.Grammar;
 
-namespace Algol_interpreter;
+namespace Algol_interpreter.Visitor;
 
 public class AlgolVisitor : Algol60BaseVisitor<object>
 {
@@ -14,6 +14,37 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     /* Override metody z AlgolBaseVisitor */
 
     public override object VisitStatement(Algol60Parser.StatementContext context)
+    {
+        return null;
+    }
+
+    public override object VisitReturn_statement(Algol60Parser.Return_statementContext context)
+    {
+        return null;
+    }
+
+    public override object VisitVariable_type(Algol60Parser.Variable_typeContext context)
+    {
+        return null;
+    }
+
+    public override object VisitArray_declaration(Algol60Parser.Array_declarationContext context)
+    {
+        return null;
+    }
+
+    public override object VisitArray_inicialization(Algol60Parser.Array_inicializationContext context)
+    {
+        return null;
+
+    }
+
+    public override object VisitArray_access(Algol60Parser.Array_accessContext context)
+    {
+        return null;
+    }
+
+    public override object VisitFunction_call(Algol60Parser.Function_callContext context)
     {
         return null;
     }
@@ -116,7 +147,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         return op switch
         {
             "*" => Multiplication(left, right),
-            "/" or "%" => Division(left, right),
+            "/" or "%" => Division(left, right, op),
             _ => throw new AlgolVisitorExceptions.UnsupportedMultiplicativeOpperatorException(op)
         };
 
@@ -190,15 +221,36 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     }
 
 
-    private static object Division(object left, object right)
+    private static object Division(object left, object right, object op)
     {
-        return left switch
+        if (!Equals(left, right))
         {
-            int l when right is int r => l % r,
-            float l when right is float r => l % r,
-            int l when right is float r => l % r,
-            float l when right is int r => l % r,
-            _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException($"{left.GetType()} nebo {right.GetType()}")
+            throw new AlgolVisitorExceptions.UnsupportedMultiplicativeValueException();
+        }
+
+        return op.ToString() switch
+        {
+            "/" => // normal
+                left switch
+                {
+                    int l when right is int r => l / r,
+                    float l when right is float r => l / r,
+                    int l when right is float r => l / r,
+                    float l when right is int r => l / r,
+                    _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException(
+                        $"{left.GetType()} nebo {right.GetType()}")
+                },
+            "%" => // modulo
+                left switch
+                {
+                    int l when right is int r => l % r,
+                    float l when right is float r => l % r,
+                    int l when right is float r => l % r,
+                    float l when right is int r => l % r,
+                    _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException(
+                        $"{left.GetType()} nebo {right.GetType()}")
+                },
+            _ => 0
         };
     }
 
@@ -214,4 +266,20 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         };
     }
 
+    private new static bool Equals(object? left, object? right)
+    {
+        if (left == null && right == null)
+            return true;
+
+        if (left == null || right == null)
+            return false;
+
+        return left switch
+        {
+            float l when right is float r => l == r,
+            int l when right is int r => l == r,
+            string l when right is string r => l == r,
+            _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException($"{left.GetType()} nebo {right.GetType()}")
+        };
+    }
 }

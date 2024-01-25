@@ -27,4 +27,9 @@ public abstract class AlgolVisitorExceptions
     {
         public UnsupportedMultiplicativeOpperatorException(object? obj) : base($"Nepodporovaný opperand pro násobení/dělení: {obj}") { }
     }
+
+    public class UnsupportedMultiplicativeValueException : AlgolInterpreterException
+    {
+        public UnsupportedMultiplicativeValueException() : base("Nulou nelze dělit!") { }
+    }
 }
