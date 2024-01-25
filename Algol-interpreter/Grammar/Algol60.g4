@@ -16,28 +16,37 @@ Vysvětlivky:
 
 // obecná pravidla
 program: statement* EOF;
-statement: variable_declaration | function_definition | expression_statement | if_statement | while_statement;
-variable_declaration: data_type IDENTIFIER (ASSIGN expression)? ';';
+statement: variable_declaration | array_declaration | function_definition | expression_statement | return_statement | if_statement | while_statement;
+return_statement: 'RETURN' expression ';';
+variable_declaration: variable_type IDENTIFIER (ASSIGN expression)? ';';
 expression_statement: expression ';';
-expression: additive_expression;
-// za primární výraz je možno dosazovat identifier - např. název proměnné, number - nějaké číslo, string, či výraz v závorkách (x+5...)  
+expression: data_type | IDENTIFIER | function_call | '(' expression ')'	| expression MULTIPLICATIVE_OPPERANDS expression | expression ADDITIVE_OPPERANDS expression
+    | expression COMPARISON_OPPERANDS expression | expression LOGICAL_OPPERANDS expression | additive_expression | array_access;
+
+// za primární výraz je možno dosazovat identifier - např. název proměnné, number - nějaké číslo, string, či výraz v závorkách (x+5...)
 primary_expression: IDENTIFIER | NUMBER | STRING | '(' expression ')';  
-block: '{' statement* '}';
+block: 'BEGIN' statement* 'END';
 
 // cykly a podmínky 
-if_statement: 'IF' expression block ('ELSE' block)?;
+if_statement: 'IF' expression 'THEN' block ('ELSE' block)?;
 while_statement: 'WHILE' expression block;
 
 // lokální a globální typované proměnné
-// TODO dodělat scope lokalnich a globalnich
+variable_type: data_type | 'GLOBAL' data_type;
 data_type: 'INTEGER' | 'REAL' | 'STRING';
+
+// pole
+array_declaration: variable_type IDENTIFIER '[' expression ']' ('[' expression ']')* (ASSIGN array_inicialization)? ';';
+array_inicialization: '[' expression ']' ('[' expression ']')* ';';
+array_access: IDENTIFIER '[' expression ']';
 
 // funkce s parametry
 function_definition: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block;
 parameter_list: variable_declaration (',' variable_declaration)*;
+function_call: IDENTIFIER '(' (expression (',' expression)*)? ')';
 
 // aritmetické výrazy
-additive_expression: multiplicative_expression (ADDITIVE_OPPERANDS multiplicative_expression)*; 
+additive_expression: multiplicative_expression (ADDITIVE_OPPERANDS multiplicative_expression)*;
 multiplicative_expression: primary_expression (MULTIPLICATIVE_OPPERANDS primary_expression)*; 
 
 /* TERMINÁLY (klíčová slova) */
@@ -56,3 +65,5 @@ DIGIT: [0-9];
 ASSIGN: ':=';
 MULTIPLICATIVE_OPPERANDS: '*' | '%' | '/';
 ADDITIVE_OPPERANDS: '+' | '-';
+COMPARISON_OPPERANDS: '==' | '!=' | '<' | '>' | '<=' | '>=';
+LOGICAL_OPPERANDS: 'AND' | 'OR';
