@@ -20,4 +20,8 @@
       <Content Include="Grammar\Algol60.g4" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="AlgolExamples\" />
+    </ItemGroup>
+
 </Project>
