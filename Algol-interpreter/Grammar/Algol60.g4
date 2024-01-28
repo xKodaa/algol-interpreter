@@ -9,59 +9,59 @@ Vysvětlivky:
     | => or
     ? => volitelná část
     ( ) => spojení nererminálnů
+    # => label, vytvotri zaroven metodu ve visitorovi
     'program' => název lexikálního pravidla: reprezentace pravidel
 */
 
 /* LEXIKÁLNÍ PRAVIDLA */
 
-// obecná pravidla
-program: statement* EOF;
-statement: variable_declaration | array_declaration | function_definition | expression_statement | return_statement | if_statement | while_statement;
+// struktura 
+program: 'BEGIN' declaration* 'END';
+block: 'BEGIN' declaration* statement* return_statement? 'END';
+declaration: statement | variable_declaration | variable_type | array_declaration | function_declaration | if_block | while_statement;
+statement: (asignment | function_call) ';';
+asignment: IDENTIFIER ASSIGN expression;
 return_statement: 'RETURN' expression ';';
-variable_declaration: variable_type IDENTIFIER (ASSIGN expression)? ';';
-expression_statement: expression ';';
-expression: data_type | IDENTIFIER | function_call | '(' expression ')'	| expression MULTIPLICATIVE_OPPERANDS expression | expression ADDITIVE_OPPERANDS expression
-    | expression COMPARISON_OPPERANDS expression | expression LOGICAL_OPPERANDS expression | additive_expression | array_access;
-
-// za primární výraz je možno dosazovat identifier - např. název proměnné, number - nějaké číslo, string, či výraz v závorkách (x+5...)
-primary_expression: IDENTIFIER | NUMBER | STRING | '(' expression ')';  
-block: 'BEGIN' statement* 'END';
+constant_type: DIGIT | NUMBER | STRING;
+expression: 
+    constant_type                                       #constant_expression
+    | IDENTIFIER                                        #identifier_expression
+    | function_call                                     #function_call_expression
+    | '(' expression ')'	                            #bracket_expression
+    | expression MULTIPLICATIVE_OPPERANDS expression    #multiplicative_expression  
+    | expression ADDITIVE_OPPERANDS expression          #additive_expression
+    | expression COMPARISON_OPPERANDS expression        #comparison_expression 
+    | expression LOGICAL_OPPERANDS expression           #logical_expression
+    | array_access                                      #array_expression;
 
 // cykly a podmínky 
-if_statement: 'IF' expression 'THEN' block ('ELSE' block)?;
+if_block: 'IF' expression 'THEN' block ('ELSE' else_if_block)?;
+else_if_block: block | if_block;
 while_statement: 'WHILE' expression block;
 
 // lokální a globální typované proměnné
+variable_declaration: variable_type IDENTIFIER (ASSIGN expression)? ';';
 variable_type: data_type | 'GLOBAL' data_type;
 data_type: 'INTEGER' | 'REAL' | 'STRING';
 
 // pole
-array_declaration: variable_type IDENTIFIER '[' expression ']' ('[' expression ']')* (ASSIGN array_inicialization)? ';';
-array_inicialization: '[' expression ']' ('[' expression ']')* ';';
+array_declaration: variable_type IDENTIFIER ('[' DIGIT ']')* (ASSIGN array_inicialization)? ';';
+array_inicialization: '[' expression (',' expression)* '] ;';
 array_access: IDENTIFIER '[' expression ']';
 
 // funkce s parametry
-function_definition: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block;
-parameter_list: variable_declaration (',' variable_declaration)*;
+function_declaration: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block;
+parameter_list: parameter (',' parameter)*;
+parameter: variable_type IDENTIFIER;
 function_call: IDENTIFIER '(' (expression (',' expression)*)? ')';
 
-// aritmetické výrazy
-additive_expression: multiplicative_expression (ADDITIVE_OPPERANDS multiplicative_expression)*;
-multiplicative_expression: primary_expression (MULTIPLICATIVE_OPPERANDS primary_expression)*; 
-
-/* TERMINÁLY (klíčová slova) */
-
-// ignorování whitespaců a zástupných znaků pro tabulátor (\t) a zakončení řádku (\r\n)
+// ignorování whitespaců a komentářů
 WS: [ \t\r\n]+ -> skip;
-// ignorování komentářů '(*' -> začatek komentáře, '.*?' -> libovolný počet znaků, '*)' -> konec komentáře
 COMMENT: '(*' .*? '*)' -> skip;
-// prvni musi byt pismeno nebo '_', dalši muže byt pismeno/čislice/'_' 
-IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*; 
-// muže začinat '+' nebo '-', pak musi nasledovat čislice, pak muže nasledovat desetinná část s číslicemi
-NUMBER: (ADDITIVE_OPPERANDS)? (DIGIT)+ ('.' (DIGIT)+)?; 
-// musí začínat "" uvozovkama, uvnitř uvozovek muže obsahovat jakýkoliv počet libovolných znaků, ale nesmí obsahovat další uvozovky
-STRING: '"' (~["])* '"'; 
-DIGIT: [0-9]; 
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;  // 1. znak musi byt pismeno nebo '_', dalši muže byt pismeno/čislice/'_'
+NUMBER: (ADDITIVE_OPPERANDS)? (DIGIT)+ ('.' (DIGIT)+)?;  // muže začinat '+' nebo '-', pak musi nasledovat čislice, pak muže nasledovat desetinná čiselna čast
+STRING: ('"' ~'"'* '"') | ('\'' ~'\''* '\''); // musi začinat "" a uvnitr muze byt libovolny pocet znaku krome ""
+DIGIT: [0-9]+;
 ASSIGN: ':=';
 MULTIPLICATIVE_OPPERANDS: '*' | '%' | '/';
 ADDITIVE_OPPERANDS: '+' | '-';
