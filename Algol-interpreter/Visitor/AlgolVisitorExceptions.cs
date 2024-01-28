@@ -1,4 +1,4 @@
-namespace Algol_interpreter;
+namespace Algol_interpreter.Visitor;
 
 public abstract class AlgolVisitorExceptions
 {
@@ -27,9 +27,39 @@ public abstract class AlgolVisitorExceptions
     {
         public UnsupportedMultiplicativeOpperatorException(object? obj) : base($"Nepodporovaný opperand pro násobení/dělení: {obj}") { }
     }
+    
+    public class UnsupportedComparisonOpperatorException : AlgolInterpreterException
+    {
+        public UnsupportedComparisonOpperatorException(object? obj) : base($"Nepodporovaný opperand pro porovnávání: {obj}") { }
+    }    
+    
+    public class UnsupportedSpecificComparisonOpperatorException : AlgolInterpreterException
+    {
+        public UnsupportedSpecificComparisonOpperatorException(object? obj) : base($"Nepodporovaný specifický operátor: {obj}") { }
+    }
 
     public class UnsupportedMultiplicativeValueException : AlgolInterpreterException
     {
         public UnsupportedMultiplicativeValueException() : base("Nulou nelze dělit!") { }
     }
+
+    public class DuplicateVariableException : Exception
+    {
+        public DuplicateVariableException(object? identifier) : base($"Proměnná s názvem {identifier} již existuje") { }
+    }
+
+    public class InccorectArgumentsCountException : Exception
+    {
+        public InccorectArgumentsCountException(object? procName) : base($"Nesprávný počet argumentů u procedury: {procName}") { }
+    }
+
+    public class NonDeclaredMemberException : Exception
+    {
+        public NonDeclaredMemberException(object? procName) : base($"Člen {procName} není deklarován") { }
+    }    
+    
+    public class ArrayOutOfBoundsException : Exception
+    {
+        public ArrayOutOfBoundsException(object? arraySize) : base($"Velikost pole {arraySize} překročena") { }
+    }   
 }
