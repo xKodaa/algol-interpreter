@@ -5,14 +5,12 @@ namespace Algol_interpreter.Visitor;
 
 public class AlgolVisitor : Algol60BaseVisitor<object>
 {
-    private Dictionary<string, object?> Variables { get; set; } = new();
-
-    public AlgolVisitor()
+    private Dictionary<string, object?> Variables { get; set; } = new()
     {
-        Variables["Print"] = new Func<object?[], object?>(Print);
-    }
+        ["Print"] = new Func<object?[], object?>(Print)   // přidání předdefinované funkce print pro výpis do konzole
+    };
 
-    #region Statements
+    #region Struktura
 
     public override object VisitConstant_type(Algol60Parser.Constant_typeContext context)
     {
@@ -40,10 +38,18 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
         if (!Variables.ContainsKey(varName))
         {
-            throw new Exception($"Proměnná s názvem {varName} není definována");
+            throw new AlgolVisitorExceptions.NonDeclaredVariableException(varName);
         }
 
-        return Variables[varName];
+        return Variables[varName] ?? "";
+    }
+
+    public override object VisitAsignment(Algol60Parser.AsignmentContext context)
+    {
+        var identifier = context.IDENTIFIER().GetText();
+        var value = Visit(context.expression());
+        Variables[identifier] = value;
+        return value;
     }
 
     public override object VisitReturn_statement(Algol60Parser.Return_statementContext context)
@@ -74,16 +80,9 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
                 throw new AlgolVisitorExceptions.IncorrectAssignmentException(arrayName, value, value.GetType());
             }
                 
-            if (i < size)
-            {
-                array[i] = Visit(initializationValues[i]);
-            }
-            else
-            {
-                throw new AlgolVisitorExceptions.ArrayOutOfBoundsException(size);
-            }
+            if (i >= size) throw new AlgolVisitorExceptions.ArrayOutOfBoundsException(size);
+            array[i] = Visit(initializationValues[i]);
         }
-
         return arrayName;
     }
 
@@ -119,27 +118,26 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
         if (Variables.TryGetValue(procName, out var funcObj) && funcObj is Func<object?[], object?> func)
         {
-            return func(args);
+            return func(args) ?? "";
         }
         if (Variables.TryGetValue(procName, out var procContextObj) && procContextObj is Algol60Parser.Function_declarationContext procContext)
         {
             var parameters = procContext.parameter_list()?.parameter().
                 Select(p => p.IDENTIFIER().GetText()).ToList() ?? new List<string>();
-            if (parameters.Count != args.Length)
-                throw new AlgolVisitorExceptions.InccorectArgumentsCountException(procName);
+            if (parameters.Count != args.Length) throw new AlgolVisitorExceptions.InccorectArgumentsCountException(procName);
 
-            var localVariables = new Dictionary<string, object?>();
+            var localVars = new Dictionary<string, object?>();
             for (var i = 0; i < parameters.Count; i++)
             {
-                localVariables[parameters[i]] = args[i];
+                localVars[parameters[i]] = args[i];
             }
         
-            var previousVariables = new Dictionary<string, object?>(Variables);
-            Variables = localVariables;
+            var originalVars = new Dictionary<string, object?>(Variables);
+            Variables = localVars;
             Visit(procContext.block());
             var returnValue = Variables.GetValueOrDefault("_returnValue");
-            Variables = previousVariables;
-            return returnValue;
+            Variables = originalVars;
+            return returnValue ?? "";
         } 
         throw new AlgolVisitorExceptions.NonDeclaredMemberException(procName);
     }
@@ -161,22 +159,9 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
                 throw new AlgolVisitorExceptions.IncorrectAssignmentException(identifier, value, dataType);
             }
         }
-        /*
-        if (!Variables.TryAdd(identifier, value)) 
-            throw new AlgolVisitorExceptions.DuplicateVariableException(identifier);*/
 
         Variables[identifier] = value;
         return identifier;
-    }
-
-    public override object VisitData_type(Algol60Parser.Data_typeContext context)
-    {
-        return context.GetText();
-    }
-    
-    public override object VisitVariable_type(Algol60Parser.Variable_typeContext context)
-    {
-        return context.GetText();
     }
     
     #endregion
@@ -195,7 +180,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         {
             Visit(context.else_if_block()); // ELSE větev
         }
-        return null;
+        return condition;
     }
 
     public override object VisitWhile_block(Algol60Parser.While_blockContext context)
@@ -204,7 +189,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         {
             Visit(context.block());
         }
-        return null;
+        return "";
     }
 
     #endregion
@@ -230,7 +215,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
 
-        var op = context.MULTIPLICATIVE_OPPERANDS().ToString();
+        var op = context.MULTIPLICATIVE_OPPERANDS().GetText();
         return op switch
         {
             "*" => Multiplication(left, right),
@@ -242,9 +227,10 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
     public override object VisitComparison_expression(Algol60Parser.Comparison_expressionContext context)
     {
-        var op = context.COMPARISON_OPPERANDS()?.GetText();
-        var left = Visit(context.expression(0)); 
+        var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
+
+        var op = context.COMPARISON_OPPERANDS().GetText();
         
         return op switch
         {
@@ -379,11 +365,6 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
     private static object Division(object left, object right, object op)
     {
-        if (!Equals(left, right))
-        {
-            throw new AlgolVisitorExceptions.UnsupportedMultiplicativeValueException();
-        }
-
         return op.ToString() switch
         {
             "/" => // normal
@@ -426,15 +407,25 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     
     #endregion
 
-    //OK
     #region Pomocné metody
 
     // Výpis argumentů do konzole
     private static object? Print(object?[] args)
     {
-        foreach (var arg in args)
+        if (args.Length > 1)
         {
-            Console.WriteLine(arg);
+            foreach (var arg in args)
+            {
+                Console.Write(arg);
+            }
+            Console.WriteLine();
+        }
+        else
+        {
+            foreach (var arg in args)
+            {
+                Console.WriteLine(arg);
+            } 
         }
         return null;
     }
@@ -448,24 +439,6 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
             "REAL" => obj is float,
             "STRING" => obj is string,
             _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException(datatype)
-        };
-    }
-
-    // Equals
-    private new static bool Equals(object? left, object? right)
-    {
-        if (left == null && right == null)
-            return true;
-
-        if (left == null || right == null)
-            return false;
-
-        return left switch
-        {
-            float l when right is float r => l == r,
-            int l when right is int r => l == r,
-            string l when right is string r => l == r,
-            _ => throw new AlgolVisitorExceptions.UnsupportedDataTypeException($"{left.GetType()} nebo {right.GetType()}")
         };
     }
 

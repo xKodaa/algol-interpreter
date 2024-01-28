@@ -38,24 +38,19 @@ public abstract class AlgolVisitorExceptions
         public UnsupportedSpecificComparisonOpperatorException(object? obj) : base($"Nepodporovaný specifický operátor: {obj}") { }
     }
 
-    public class UnsupportedMultiplicativeValueException : AlgolInterpreterException
-    {
-        public UnsupportedMultiplicativeValueException() : base("Nulou nelze dělit!") { }
-    }
-
-    public class DuplicateVariableException : Exception
-    {
-        public DuplicateVariableException(object? identifier) : base($"Proměnná s názvem {identifier} již existuje") { }
-    }
-
     public class InccorectArgumentsCountException : Exception
     {
-        public InccorectArgumentsCountException(object? procName) : base($"Nesprávný počet argumentů u procedury: {procName}") { }
+        public InccorectArgumentsCountException(object? procName) : base($"Nesprávný počet argumentů funkce: {procName}") { }
     }
 
     public class NonDeclaredMemberException : Exception
     {
         public NonDeclaredMemberException(object? procName) : base($"Člen {procName} není deklarován") { }
+    }  
+    
+    public class NonDeclaredVariableException : Exception
+    {
+        public NonDeclaredVariableException(object? varName) : base($"Proměnná {varName} není deklarováná") { }
     }    
     
     public class ArrayOutOfBoundsException : Exception
