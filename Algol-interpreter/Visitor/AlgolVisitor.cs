@@ -1,3 +1,4 @@
+using System.Globalization;
 using Algol_interpreter.Grammar;
 
 namespace Algol_interpreter.Visitor;
@@ -13,24 +14,38 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
     #region Statements
 
+    public override object VisitConstant_type(Algol60Parser.Constant_typeContext context)
+    {
+        if (context.DIGIT() is { } i)
+        {
+            return int.Parse(i.GetText());
+        }
+
+        if (context.NUMBER() is { } f)
+        {
+            return float.Parse(context.NUMBER().GetText(), CultureInfo.InvariantCulture);
+        }
+
+        if (context.STRING() is { } s)
+        {
+            return s.GetText()[1..^1];
+        }
+
+        throw new AlgolVisitorExceptions.UnsupportedDataTypeException(context.GetText());
+    }
+
     public override object VisitIdentifier_expression(Algol60Parser.Identifier_expressionContext context)
     {
-        try
+        var varName = context.IDENTIFIER().GetText();
+
+        if (!Variables.ContainsKey(varName))
         {
-            var expressionName = context.IDENTIFIER()?.GetText();
-            if (expressionName != null && Variables.ContainsKey(expressionName))
-            {
-                throw new AlgolVisitorExceptions.DuplicateVariableException(expressionName);
-            }
-            return null;
+            throw new Exception($"Proměnná s názvem {varName} není definována");
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in VisitExpression: {ex.Message}");
-            return null;
-        }
+
+        return Variables[varName];
     }
-    
+
     public override object VisitReturn_statement(Algol60Parser.Return_statementContext context)
     {
         Variables["_returnValue"] = Visit(context.expression());
@@ -43,7 +58,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     public override object VisitArray_declaration(Algol60Parser.Array_declarationContext context)
     {
         var arrayName = context.IDENTIFIER().GetText();
-        var size = int.Parse(context.DIGIT(0).GetText());
+        var size = int.Parse(context.DIGIT().GetText());
         var arrayType = context.variable_type().GetText();
         
         var array = new object?[size];
@@ -122,8 +137,9 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
             var previousVariables = new Dictionary<string, object?>(Variables);
             Variables = localVariables;
             Visit(procContext.block());
+            var returnValue = Variables.GetValueOrDefault("_returnValue");
             Variables = previousVariables;
-            return Variables.GetValueOrDefault("_returnValue") ?? "";
+            return returnValue;
         } 
         throw new AlgolVisitorExceptions.NonDeclaredMemberException(procName);
     }
@@ -181,8 +197,8 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         }
         return null;
     }
-    
-    public override object VisitWhile_statement(Algol60Parser.While_statementContext context)
+
+    public override object VisitWhile_block(Algol60Parser.While_blockContext context)
     {
         while ((bool)Visit(context.expression()))
         {
@@ -200,7 +216,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
 
-        var op = context.ADDITIVE_OPPERANDS().ToString();
+        var op = context.ADDITIVE_OPPERANDS().GetText();
         return op switch
         {
             "+" => Addition(left, right),
@@ -355,7 +371,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
         if (left is string || right is string)
         {
-            return $"{left}+{right}";
+            return $"{left}{right}";
         }
         throw new AlgolVisitorExceptions.UnsupportedDataTypeException($"{left.GetType()} nebo {right.GetType()}");
     }
