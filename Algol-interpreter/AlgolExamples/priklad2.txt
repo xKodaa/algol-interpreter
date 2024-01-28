@@ -1,0 +1,17 @@
+﻿BEGIN
+    REAL pole[3] := [100.1, 15.55, 80.92];
+    REAL max := 0.0;
+    INTEGER i := 0;
+
+    WHILE i < 3
+    BEGIN
+        Print(i, ". prvek pole: ", pole[i]);
+        IF pole[i] > max THEN
+	BEGIN
+	    max := pole[i];	
+	END
+        i := i + 1;
+    END
+
+    Print("Maximální prvek pole = ", max);   
+END

@@ -1,0 +1,14 @@
+﻿BEGIN
+    PROCEDURE Multiply(INTEGER a, INTEGER b)
+    BEGIN
+        REAL result := a * b;
+        RETURN result;
+    END
+
+    REAL x := 5.1;
+    REAL y := 10.5;
+
+    REAL vysledek := Multiply(x, y);
+    Print("Nasobim cisla ", x , " a ", y);
+    Print("Vysledek nasobeni = ", vysledek);			
+END

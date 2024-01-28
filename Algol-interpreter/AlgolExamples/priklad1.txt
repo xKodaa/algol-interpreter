@@ -1,0 +1,24 @@
+﻿BEGIN
+    PROCEDURE ZjistiZnamenko(INTEGER num)
+    BEGIN
+        IF num > 0 THEN
+        BEGIN
+            RETURN "KLADNÉ";
+        END
+
+        ELSE IF num < 0 THEN
+        BEGIN
+            RETURN "ZÁPORNÉ";
+        END
+
+        ELSE
+        BEGIN
+            RETURN "NULA";
+        END
+    END
+
+    INTEGER number := 6; 
+    Print("Zjišťuji jaké je číslo ", number); 
+    STRING vysledek := ZjistiZnamenko(number);
+    Print("Číslo je: ", vysledek);
+END
