@@ -9,6 +9,7 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     {
         ["Print"] = new Func<object?[], object?>(Print)   // přidání předdefinované funkce print pro výpis do konzole
     };
+    private Dictionary<string, object[,]> variables2D = new ();
 
     #region Struktura
 
@@ -96,6 +97,47 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
 
         var array = (object?[])Variables[arrayName]!;
         return array[index] ?? $"{arrayName}[index] = null";
+    }
+
+    public override object VisitArray_2d_declaration(Algol60Parser.Array_2d_declarationContext context)
+    {
+        var arrayName = context.IDENTIFIER().GetText();
+        var rows = int.Parse(context.DIGIT(0).GetText());
+        var cols = int.Parse(context.DIGIT(1).GetText());
+        var arrayType = context.variable_type().GetText();
+
+        var array2D = new object?[rows, cols];
+        Variables[arrayName] = array2D;
+
+        if (context.array_2d_inicialization() == null) return arrayName;
+
+        var initializationValues = context.array_2d_inicialization().expression();
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                var value = Visit(initializationValues[i * cols + j]);
+                if (!IsExpectedDataType(arrayType, value))
+                {
+                    throw new AlgolVisitorExceptions.IncorrectAssignmentException(arrayName, value, value?.GetType());
+                }
+                array2D[i, j] = value;
+            }
+        }
+        return arrayName;
+    }
+
+    public override object VisitArray_2d_access(Algol60Parser.Array_2d_accessContext context)
+    {
+        var arrayName = context.IDENTIFIER().GetText();
+        var rowIndex = (int)(Visit(context.expression(0)) ?? throw new InvalidOperationException());
+        var colIndex = (int)(Visit(context.expression(1)) ?? throw new InvalidOperationException());
+
+        if (!Variables.ContainsKey(arrayName))
+            throw new AlgolVisitorExceptions.NonDeclaredMemberException(arrayName);
+
+        var array2D = (object?[,])Variables[arrayName]!;
+        return array2D[rowIndex, colIndex] ?? $"{arrayName}[{rowIndex}, {colIndex}] = null";
     }
 
     #endregion

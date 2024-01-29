@@ -18,7 +18,7 @@ grammar Algol60;
 // struktura 
 program: 'BEGIN' declaration* 'END'; 
 block: 'BEGIN' declaration* statement* return_statement? 'END'; 
-declaration: statement | variable_declaration | variable_type | array_declaration | function_declaration | if_block | while_block; //ok
+declaration: statement | variable_declaration | variable_type | array_declaration | array_2d_declaration | function_declaration | if_block | while_block;
 statement: (asignment | function_call) ';'; 
 asignment: IDENTIFIER ASSIGN expression; 
 return_statement: 'RETURN' expression ';'; 
@@ -31,7 +31,8 @@ expression:
     | expression ADDITIVE_OPPERANDS expression          #additive_expression
     | expression COMPARISON_OPPERANDS expression        #comparison_expression 
     | expression LOGICAL_OPPERANDS expression           #logical_expression
-    | array_access                                      #array_expression; 
+    | array_access                                      #array_expression
+    | array_2d_access                                   #array_2d_expression;
 
 // cykly a podmínky 
 if_block: 'IF' expression 'THEN' block ('ELSE' else_if_block)?;
@@ -47,6 +48,11 @@ data_type: 'INTEGER' | 'REAL' | 'STRING';
 array_declaration: variable_type IDENTIFIER '[' DIGIT ']' (ASSIGN array_inicialization)? ';'; 
 array_inicialization: '[' expression (',' expression)* ']'; 
 array_access: IDENTIFIER '[' expression ']';
+
+// 2D pole
+array_2d_declaration: variable_type IDENTIFIER '[' DIGIT ']' '[' DIGIT ']' (ASSIGN array_2d_inicialization)? ';';
+array_2d_inicialization: '[' ('[' expression (',' expression)* ']' ','? )* ']';
+array_2d_access: IDENTIFIER '[' expression ']' '[' expression ']';
 
 // funkce s parametry
 function_declaration: 'PROCEDURE' IDENTIFIER '(' parameter_list? ')' block; 

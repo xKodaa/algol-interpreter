@@ -15,9 +15,10 @@ namespace Algol_interpreter
 
         private static void RunAllExamples()
         {
-            RunInterpreter("../../../AlgolExamples/priklad1.txt");
+            /*RunInterpreter("../../../AlgolExamples/priklad1.txt");
             RunInterpreter("../../../AlgolExamples/priklad2.txt");
-            RunInterpreter("../../../AlgolExamples/priklad3.txt");
+            RunInterpreter("../../../AlgolExamples/priklad3.txt");*/
+            RunInterpreter("../../../AlgolExamples/priklad4.txt");
         }
 
         private static void RunInterpreter(string fileName)

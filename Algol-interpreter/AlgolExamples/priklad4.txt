@@ -1,0 +1,13 @@
+﻿BEGIN
+    REAL pole2D[3][4] := [[70.0, 15.0, 3.0, 10.0], [8.0, 11.0, 71.0, 1.0], [56.0, 14.0, 11.0, 12.0]];
+
+    REAL hodnota1 := pole2D[0][0];
+    REAL hodnota2 := pole2D[1][2];
+    REAL hodnota3 := pole2D[2][3];
+    REAL hodnota4 := pole2D[0][3];
+    
+    Print("Hodnota na pozici [0, 0] = ", hodnota1);
+    Print("Hodnota na pozici [1, 2] = ", hodnota2);
+    Print("Hodnota na pozici [2, 3] = ", hodnota3);
+    Print("Hodnota na pozici [0, 3] = ", hodnota4);
+END
