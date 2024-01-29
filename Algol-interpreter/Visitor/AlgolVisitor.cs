@@ -9,7 +9,6 @@ public class AlgolVisitor : Algol60BaseVisitor<object>
     {
         ["Print"] = new Func<object?[], object?>(Print)   // přidání předdefinované funkce print pro výpis do konzole
     };
-    private Dictionary<string, object[,]> variables2D = new ();
 
     #region Struktura
 
